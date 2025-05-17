@@ -1,11 +1,27 @@
 version: "3.9"
 
 services:
-  vue-app:
-    container_name: vue-inventario
+  builder:
+    container_name: vue-builder
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.builder
+    volumes:
+      - build_dist:/app/dist
+    command: sh -c "cp -r /app/dist /dist" 
+
+  nginx:
+    container_name: vue-nginx
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     ports:
       - "9090:80"
+    volumes:
+      - build_dist:/dist:ro
+    depends_on:
+      - builder
     restart: unless-stopped
+
+volumes:
+  build_dist:
