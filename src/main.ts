@@ -52,10 +52,10 @@ keycloak
       }
     } else {
       console.warn("No se pudo autenticar");
-      window.location.reload();
+      //window.location.reload();
     }
   })
   .catch((err) => {
     console.error("Error de autenticación", err);
-    window.location.reload();
+    //window.location.reload();
   });
