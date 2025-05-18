@@ -10,6 +10,7 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "keycloak-js": "^26.2.0",
     "pinia": "^3.0.1",
     "sweetalert2": "^11.21.1",
     "vue": "^3.5.13",
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.1",
+    "@types/keycloak-js": "^2.5.4",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-vue": "^5.2.3",
     "@vue/tsconfig": "^0.7.0",

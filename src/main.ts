@@ -1,17 +1,37 @@
-import './assets/main.css';
+import './assets/main.css'
 
-import { createApp } from 'vue';
-import { createPinia } from 'pinia';
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import App from './App.vue'
+import router from './router'
 
-import App from './App.vue';
-import router from './router';
 
-const app = createApp(App);
+import Keycloak from 'keycloak-js'
+const app = createApp(App)
 
 if (import.meta.env.PROD) {
-  (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ = undefined;
+  (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ = undefined
 }
 
-app.use(createPinia());
-app.use(router);
-app.mount('#app');
+app.use(createPinia())
+app.use(router)
+
+const keycloak = new Keycloak({
+  url: import.meta.env.VITE_KEYCLOAK_URL,
+  realm: import.meta.env.VITE_KEYCLOAK_REALM,
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID
+})
+
+keycloak
+  .init({ onLoad: 'login-required' })
+  .then((authenticated) => {
+    if (authenticated) {
+      console.log('Usuario autenticado con Keycloak')
+      app.mount('#app') 
+    } else {
+      console.warn('⚠️ Usuario no autenticado')
+    }
+  })
+  .catch((err) => {
+    console.error(' Error al inicializar Keycloak', err)
+  })
