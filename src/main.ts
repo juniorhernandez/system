@@ -33,7 +33,7 @@ keycloak
     onLoad: "login-required",
     checkLoginIframe: false,
     flow: "standard",
-    pkceMethod: "S256",
+   // pkceMethod: "S256",
     scope: "openid",
   })
   .then((authenticated) => {
