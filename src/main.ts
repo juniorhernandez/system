@@ -26,12 +26,13 @@ keycloak
   .init({ onLoad: 'login-required' })
   .then((authenticated) => {
     if (authenticated) {
-      console.log('Usuario autenticado con Keycloak')
       app.mount('#app') 
     } else {
-      console.warn('⚠️ Usuario no autenticado')
+      console.warn('No se pudo autenticar')
+      window.location.reload()
     }
   })
   .catch((err) => {
-    console.error(' Error al inicializar Keycloak', err)
+    console.error('Error de autenticación', err)
+    window.location.reload()
   })
