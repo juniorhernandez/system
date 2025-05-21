@@ -2,7 +2,7 @@
 
 const logout = () => {
   (window as any).$keycloak.logout({
-    redirectUri: window.location.origin
+    redirectUri: `${window.location.origin}/sistema/`
   })
 }
 </script>
