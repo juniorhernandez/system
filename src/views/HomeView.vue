@@ -1,9 +1,25 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import { useProductoStore } from '@/stores/productoStore'
+import type { Producto } from '@/stores/productoStore'
 
+const API_URL = import.meta.env.VITE_API_URL + '/inventory'
 const productoStore = useProductoStore()
+
+const cargarProductos = async () => {
+  try {
+    const response = await axios.get(API_URL)
+    productoStore.setProductos(response.data)
+  } catch (error) {
+    console.error('Error al obtener productos para el dashboard', error)
+  }
+}
+
+onMounted(cargarProductos)
+
 const totalProductos = computed(() => productoStore.productos.length)
+
 const productosCriticos = computed(() =>
   productoStore.productos.filter(producto => producto.stock < 10)
 )

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import Swal from 'sweetalert2'
+import axios from 'axios'
 import { useProductoStore } from '@/stores/productoStore'
 import type { Producto } from '@/stores/productoStore'
 
+const API_URL = import.meta.env.VITE_API_URL + '/inventory'
 const productoStore = useProductoStore()
 
 const nuevoProducto = ref<Partial<Producto>>({
@@ -15,36 +17,56 @@ const nuevoProducto = ref<Partial<Producto>>({
 
 const editandoId = ref<number | null>(null)
 
-const crearProducto = async () => {
-  const producto: Producto = {
-    id: Date.now(),
-    nombre: nuevoProducto.value.nombre || '',
-    descripcion: nuevoProducto.value.descripcion || '',
-    precio: parseFloat((nuevoProducto.value.precio || 0).toFixed(2)),
-    stock: nuevoProducto.value.stock || 0
+const cargarProductos = async () => {
+  try {
+    const response = await axios.get(API_URL)
+    productoStore.setProductos(response.data)
+  } catch (error) {
+    console.error('Error al cargar productos', error)
+    Swal.fire('Error', 'No se pudieron cargar los productos.', 'error')
   }
+}
 
-  productoStore.agregarProducto(producto)
+const crearProducto = async () => {
+  try {
+    const producto = {
+      nombre: nuevoProducto.value.nombre || '',
+      descripcion: nuevoProducto.value.descripcion || '',
+      precio: parseFloat((nuevoProducto.value.precio || 0).toFixed(2)),
+      stock: nuevoProducto.value.stock || 0,
+      usuario: 'admin'
+    }
 
-  await Swal.fire('Producto agregado', 'El producto se agregó correctamente.', 'success')
-  limpiarFormulario()
+    await axios.post(API_URL, producto)
+    await Swal.fire('Producto agregado', 'El producto se agregó correctamente.', 'success')
+    limpiarFormulario()
+    await cargarProductos()
+  } catch (error) {
+    console.error('Error al crear producto', error)
+    Swal.fire('Error', 'No se pudo crear el producto.', 'error')
+  }
 }
 
 const actualizarProducto = async () => {
   if (!editandoId.value) return
 
-  const productoActualizado: Producto = {
-    id: editandoId.value,
-    nombre: nuevoProducto.value.nombre || '',
-    descripcion: nuevoProducto.value.descripcion || '',
-    precio: parseFloat((nuevoProducto.value.precio || 0).toFixed(2)),
-    stock: nuevoProducto.value.stock || 0
+  try {
+    const productoActualizado = {
+      nombre: nuevoProducto.value.nombre || '',
+      descripcion: nuevoProducto.value.descripcion || '',
+      precio: parseFloat((nuevoProducto.value.precio || 0).toFixed(2)),
+      stock: nuevoProducto.value.stock || 0,
+      usuario: 'admin'
+    }
+
+    await axios.put(`${API_URL}/${editandoId.value}`, productoActualizado)
+    await Swal.fire('Producto actualizado', 'Los cambios se guardaron correctamente.', 'success')
+    limpiarFormulario()
+    await cargarProductos()
+  } catch (error) {
+    console.error('Error al actualizar producto', error)
+    Swal.fire('Error', 'No se pudo actualizar el producto.', 'error')
   }
-
-  productoStore.actualizarProducto(productoActualizado)
-
-  await Swal.fire('Producto actualizado', 'Los cambios se guardaron correctamente.', 'success')
-  limpiarFormulario()
 }
 
 const eliminarProducto = async (id: number) => {
@@ -61,13 +83,15 @@ const eliminarProducto = async (id: number) => {
 
   if (!result.isConfirmed) return
 
-  productoStore.eliminarProducto(id)
-
-  if (editandoId.value === id) {
-    limpiarFormulario()
+  try {
+    await axios.delete(`${API_URL}/${id}`)
+    await Swal.fire('Eliminado', 'El producto ha sido eliminado.', 'success')
+    await cargarProductos()
+    if (editandoId.value === id) limpiarFormulario()
+  } catch (error) {
+    console.error('Error al eliminar producto', error)
+    Swal.fire('Error', 'No se pudo eliminar el producto.', 'error')
   }
-
-  await Swal.fire('Eliminado', 'El producto ha sido eliminado.', 'success')
 }
 
 const editar = (producto: Producto) => {
@@ -84,6 +108,8 @@ const limpiarFormulario = () => {
   }
   editandoId.value = null
 }
+
+onMounted(cargarProductos)
 </script>
 
 <template>
@@ -91,15 +117,7 @@ const limpiarFormulario = () => {
     <h1 class="title">Inventario de Ferretería</h1>
 
     <form class="form" @submit.prevent="editandoId ? actualizarProducto() : crearProducto()">
-      <!-- ID solo visible si se está editando -->
-      <input
-        v-if="editandoId"
-        :value="editandoId"
-        type="number"
-        placeholder="ID"
-        disabled
-      />
-
+      <input v-if="editandoId" :value="editandoId" type="number" placeholder="ID" disabled />
       <input v-model="nuevoProducto.nombre" type="text" placeholder="Nombre" required />
       <input v-model="nuevoProducto.descripcion" type="text" placeholder="Descripción" required />
       <input v-model.number="nuevoProducto.precio" type="number" step="0.01" min="0" placeholder="Precio" required />
@@ -137,6 +155,8 @@ const limpiarFormulario = () => {
     </table>
   </div>
 </template>
+
+
 
 <style scoped>
 .container {
