@@ -6,13 +6,19 @@ export interface Producto {
   descripcion: string
   precio: number
   stock: number
+  usuario: string
+  fecha: string
 }
 
 export const useProductoStore = defineStore('producto', {
   state: () => ({
-    productos: [] as Producto[],
+    productos: [] as Producto[]
   }),
+
   actions: {
+    setProductos(productos: Producto[]) {
+      this.productos = productos
+    },
     agregarProducto(producto: Producto) {
       this.productos.push(producto)
     },

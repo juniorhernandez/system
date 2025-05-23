@@ -2,11 +2,20 @@
 import { ref, onMounted } from 'vue'
 import Swal from 'sweetalert2'
 import axios from 'axios'
-import { useProductoStore } from '@/stores/productoStore'
-import type { Producto } from '@/stores/productoStore'
+
+interface Producto {
+  id: number
+  nombre: string
+  descripcion: string
+  precio: number
+  stock: number
+  usuario: string
+  fecha: string
+}
 
 const API_URL = import.meta.env.VITE_API_URL + '/inventory'
-const productoStore = useProductoStore()
+
+const productos = ref<Producto[]>([])
 
 const nuevoProducto = ref<Partial<Producto>>({
   nombre: '',
@@ -20,9 +29,22 @@ const editandoId = ref<number | null>(null)
 const cargarProductos = async () => {
   try {
     const response = await axios.get(API_URL)
-    productoStore.setProductos(response.data)
+
+    if (response.status === 200 && Array.isArray(response.data)) {
+      productos.value = response.data.map((item: any) => ({
+        id: item.id,
+        nombre: item.nombre,
+        descripcion: item.descripcion,
+        precio: item.precio,
+        stock: item.stock,
+        usuario: item.usuario,
+        fecha: item.fecha
+      }))
+    } else {
+      throw new Error('Respuesta inesperada del servidor')
+    }
   } catch (error) {
-    console.error('Error al cargar productos', error)
+    console.error('Error al cargar productos:', error)
     Swal.fire('Error', 'No se pudieron cargar los productos.', 'error')
   }
 }
@@ -42,7 +64,7 @@ const crearProducto = async () => {
     limpiarFormulario()
     await cargarProductos()
   } catch (error) {
-    console.error('Error al crear producto', error)
+    console.error('Error al crear producto:', error)
     Swal.fire('Error', 'No se pudo crear el producto.', 'error')
   }
 }
@@ -64,7 +86,7 @@ const actualizarProducto = async () => {
     limpiarFormulario()
     await cargarProductos()
   } catch (error) {
-    console.error('Error al actualizar producto', error)
+    console.error('Error al actualizar producto:', error)
     Swal.fire('Error', 'No se pudo actualizar el producto.', 'error')
   }
 }
@@ -89,7 +111,7 @@ const eliminarProducto = async (id: number) => {
     await cargarProductos()
     if (editandoId.value === id) limpiarFormulario()
   } catch (error) {
-    console.error('Error al eliminar producto', error)
+    console.error('Error al eliminar producto:', error)
     Swal.fire('Error', 'No se pudo eliminar el producto.', 'error')
   }
 }
@@ -136,16 +158,18 @@ onMounted(cargarProductos)
           <th>Descripción</th>
           <th>Precio</th>
           <th>Stock</th>
+          <th>Fecha</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="producto in productoStore.productos" :key="producto.id">
+        <tr v-for="producto in productos" :key="producto.id">
           <td>{{ producto.id }}</td>
           <td>{{ producto.nombre }}</td>
           <td>{{ producto.descripcion }}</td>
           <td>Q{{ producto.precio.toFixed(2) }}</td>
           <td>{{ producto.stock }}</td>
+          <td>{{ new Date(producto.fecha).toLocaleString() }}</td>
           <td>
             <button @click="editar(producto)" class="btn edit">Editar</button>
             <button @click="eliminarProducto(producto.id)" class="btn delete">Eliminar</button>

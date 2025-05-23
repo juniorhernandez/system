@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
-import { useProductoStore } from '@/stores/productoStore'
-import type { Producto } from '@/stores/productoStore'
+
+interface Producto {
+  id: number
+  nombre: string
+  descripcion: string
+  precio: number
+  stock: number
+  usuario: string
+  fecha: string
+}
 
 const API_URL = import.meta.env.VITE_API_URL + '/inventory'
-const productoStore = useProductoStore()
+const productos = ref<Producto[]>([])
 
 const cargarProductos = async () => {
   try {
     const response = await axios.get(API_URL)
-    productoStore.setProductos(response.data)
+    productos.value = response.data
   } catch (error) {
     console.error('Error al obtener productos para el dashboard', error)
   }
@@ -18,16 +26,25 @@ const cargarProductos = async () => {
 
 onMounted(cargarProductos)
 
-const totalProductos = computed(() => productoStore.productos.length)
+const totalProductos = computed(() => productos.value.length)
 
 const productosCriticos = computed(() =>
-  productoStore.productos.filter(producto => producto.stock < 10)
+  productos.value.filter(producto => producto.stock < 10)
 )
 
 const totalDinero = computed(() =>
-  productoStore.productos.reduce((total, producto) => {
+  productos.value.reduce((total, producto) => {
     return total + producto.precio * producto.stock
   }, 0)
+)
+
+const productoReciente = computed(() => {
+  if (!productos.value.length) return null
+  return [...productos.value].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())[0]
+})
+
+const fechaReciente = computed(() =>
+  productoReciente.value ? new Date(productoReciente.value.fecha).toLocaleString() : 'Sin datos'
 )
 </script>
 
@@ -55,9 +72,16 @@ const totalDinero = computed(() =>
         <h3>Total en inventario</h3>
         <p>Q{{ totalDinero.toFixed(2) }}</p>
       </div>
+
+      <div class="card">
+        <h3>Último producto agregado</h3>
+        <p>{{ productoReciente?.nombre || 'Ninguno' }}</p>
+        <small>Fecha: {{ fechaReciente }}</small>
+      </div>
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .dashboard {
